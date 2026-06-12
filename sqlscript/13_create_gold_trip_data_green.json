@@ -1,0 +1,20 @@
+{
+	"name": "13_create_gold_trip_data_green",
+	"properties": {
+		"folder": {
+			"name": "nyc_taxi/ldw"
+		},
+		"content": {
+			"query": "\n/* Requerimientos de la prevision de demanda.\n\n   Se crea una consulta que relacione todas las columnas pertinentes por medio de joins, agregaciones y\n   la creacion de nuevas columnas que faciliten el analisis. Esta consulta se utilizara en otro store\n   procedure que en una nueva carpeta 'gold' guardara los archivos particionados por año y mes. Se\n   ejecuta com sigue:\n*/\n\nUSE nyc_taxi_ldw;\n\nEXEC gold.sp_gold_trip_data_green '2020', '01';\nEXEC gold.sp_gold_trip_data_green '2020', '02';\nEXEC gold.sp_gold_trip_data_green '2020', '03';\nEXEC gold.sp_gold_trip_data_green '2020', '04';\nEXEC gold.sp_gold_trip_data_green '2020', '05';\nEXEC gold.sp_gold_trip_data_green '2020', '06';\nEXEC gold.sp_gold_trip_data_green '2020', '07';\nEXEC gold.sp_gold_trip_data_green '2020', '08';\nEXEC gold.sp_gold_trip_data_green '2020', '09';\nEXEC gold.sp_gold_trip_data_green '2020', '10';\nEXEC gold.sp_gold_trip_data_green '2020', '11';\nEXEC gold.sp_gold_trip_data_green '2020', '12';\nEXEC gold.sp_gold_trip_data_green '2021', '01';\nEXEC gold.sp_gold_trip_data_green '2021', '02';\nEXEC gold.sp_gold_trip_data_green '2021', '03';\nEXEC gold.sp_gold_trip_data_green '2021', '04';\nEXEC gold.sp_gold_trip_data_green '2021', '05';\nEXEC gold.sp_gold_trip_data_green '2021', '06';\nEXEC gold.sp_gold_trip_data_green '2021', '07';\n\n\n/* Una vez guardadas en gold con particiones, se crea una view con columnas especificando las \n    particiones a las que corresponde y asi lograr un filtro mas eficiente cuando se llame la tabla. \n*/\n\nUSE nyc_taxi_ldw\nGO\n\nDROP VIEW IF EXISTS gold.vw_trip_data_green \nGO\n\nCREATE VIEW gold.vw_trip_data_green \nAS\n    SELECT\n        trip_data_green.filepath(1) AS year,\n        trip_data_green.filepath(2) AS month,\n        trip_data_green.*\n    FROM\n        OPENROWSET(\n            BULK 'gold/trip_data_green/year=*/month=*/*.parquet',\n            DATA_SOURCE = 'nyc_taxi_src',\n            FORMAT = 'PARQUET'\n    )\n    WITH (\n        Borough VARCHAR(15),\n        trip_date DATE,\n        trip_day VARCHAR(10),\n        trip_day_weekend_ind CHAR(1),\n        card_trip_count INT,\n        cash_trip_count INT,\n        street_hail_trip_count INT,\n        dispatch_trip_count INT,\n        trip_distance FLOAT,\n        trip_duration INT,\n        fare_amount FLOAT\n    ) AS trip_data_green\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "nyc_taxi_ldw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

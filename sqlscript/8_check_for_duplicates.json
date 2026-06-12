@@ -1,0 +1,20 @@
+{
+	"name": "8_check_for_duplicates",
+	"properties": {
+		"folder": {
+			"name": "nyc_taxi/Discovery"
+		},
+		"content": {
+			"query": "\nSELECT\n    LocationID,\n    COUNT(1) AS number_of_records\nFROM\n    OPENROWSET(\n        BULK 'raw/taxi_zone.csv',\n        DATA_SOURCE = 'nyc_taxi_data',\n        FORMAT = 'CSV',\n        HEADER_ROW = TRUE,\n        PARSER_VERSION = '2.0'\n    )\nWITH (\n    LocationID SMALLINT,\n    Borough VARCHAR(15),\n    Zone VARCHAR(50),\n    service_zone VARCHAR(15)\n) AS taxi_zone\nGROUP BY LocationID\nHAVING COUNT(1) > 1",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "nyc_taxi_discovery",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

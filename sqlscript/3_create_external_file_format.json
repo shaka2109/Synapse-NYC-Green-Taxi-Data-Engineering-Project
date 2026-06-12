@@ -1,0 +1,20 @@
+{
+	"name": "3_create_external_file_format",
+	"properties": {
+		"folder": {
+			"name": "nyc_taxi/ldw"
+		},
+		"content": {
+			"query": "\nUSE nyc_taxi_ldw\n\n-- Creacion de external CSV file format Parse_Version 2.0\n\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name='csv_file_format_pv2')\n     CREATE EXTERNAL FILE FORMAT csv_file_format_pv2\n     WITH (\n          FORMAT_TYPE = DELIMITEDTEXT,\n          FORMAT_OPTIONS (     \n               FIELD_TERMINATOR = ',',\n               STRING_DELIMITER = '\"',\n               FIRST_ROW = 2,\n               USE_TYPE_DEFAULT = FALSE,\n               ENCODING = 'UTF8',\n               PARSER_VERSION = '2.0'\n          ))\n\n-- Creacion de external TSV file format Parse_Version 2.0\n\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name='tsv_file_format_pv2')\n     CREATE EXTERNAL FILE FORMAT tsv_file_format_pv2\n     WITH (\n          FORMAT_TYPE = DELIMITEDTEXT,\n          FORMAT_OPTIONS (     \n               FIELD_TERMINATOR = '\\t',\n               STRING_DELIMITER = '\"',\n               FIRST_ROW = 2,\n               USE_TYPE_DEFAULT = FALSE,\n               ENCODING = 'UTF8',\n               PARSER_VERSION = '2.0'\n          ))\n\n-- Creacion de external parquet file format\n\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name='parquet_file_format')\n     CREATE EXTERNAL FILE FORMAT parquet_file_format\n     WITH (\n         FORMAT_TYPE = PARQUET,\n         DATA_COMPRESSION ='org.apache.hadoop.io.compress.SnappyCodec'\n         )\n\n-- Creacion de external delta file format\n\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name='delta_file_format')\n     CREATE EXTERNAL FILE FORMAT delta_file_format\n     WITH (\n         FORMAT_TYPE = DELTA\n      )\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "nyc_taxi_ldw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

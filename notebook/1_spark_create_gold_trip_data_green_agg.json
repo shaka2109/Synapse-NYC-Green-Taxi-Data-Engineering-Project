@@ -1,0 +1,204 @@
+{
+	"name": "1_spark_create_gold_trip_data_green_agg",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "projectpool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "e76eec91-1017-4220-8143-8b2e940d5ccd"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/3b0604c5-18a3-4881-9a7b-25ffe6dfee08/resourceGroups/Synapse_practice/providers/Microsoft.Synapse/workspaces/synapse-course/bigDataPools/projectpool",
+				"name": "projectpool",
+				"type": "Spark",
+				"endpoint": "https://synapse-course.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/projectpool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.5",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"### Purpose of the notebook\n",
+					"\n",
+					"Demonstrate the integration between Spark Pool and Serverless SQL Pool\n",
+					"\n",
+					"1. Create the aggregated table in Spark Pool\n",
+					"2. Access the data from Serverless SQL Pool "
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#Set the folder paths so that it can be used later. \n",
+					"bronze_folder_path = 'abfss://nyc-taxi-data@synapseadls1.dfs.core.windows.net/raw'\n",
+					"silver_folder_path = 'abfss://nyc-taxi-data@synapseadls1.dfs.core.windows.net/silver'\n",
+					"gold_folder_path = 'abfss://nyc-taxi-data@synapseadls1.dfs.core.windows.net/gold'"
+				],
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#Set the spark config to be able to get the partitioned columns year and month as strings rather than integers\n",
+					"spark.conf.set(\"spark.sql.sources.partitionColumnTypeInference.enabled\", \"false\")"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\n",
+					"\n",
+					"-- Create database to which we are going to write the data\n",
+					"\n",
+					"CREATE DATABASE IF NOT EXISTS nyc_taxi_ldw_spark\n",
+					"LOCATION 'abfss://nyc-taxi-data@synapseadls1.dfs.core.windows.net/gold';"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Read the silver data to be processed. \n",
+					"trip_data_green_df = spark.read.parquet(f\"{silver_folder_path}/trip_data_green\") "
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Perform the required aggregations\n",
+					"# 1. Total trip count\n",
+					"# 2. Total fare amount\n",
+					"from pyspark.sql.functions import *\n",
+					"\n",
+					"trip_data_green_agg_df = trip_data_green_df \\\n",
+					"                        .groupBy(\"year\", \"month\", \"pu_location_id\", \"do_location_id\") \\\n",
+					"                        .agg(count(lit(1)).alias(\"total_trip_count\"),\n",
+					"                        round(sum(\"fare_amount\"), 2).alias(\"total_fare_amount\"))"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Write the aggregated data to the gold table for consumption\n",
+					"\n",
+					"trip_data_green_agg_df.write.mode(\"overwrite\").partitionBy(\"year\", \"month\").format(\"parquet\").saveAsTable(\"nyc_taxi_ldw_spark.trip_data_green_agg\")"
+				],
+				"execution_count": 7
+			}
+		]
+	}
+}
