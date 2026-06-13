@@ -110,7 +110,6 @@ Pipeline Capabilities
 ✔ Pipeline monitoring
 ✔ Pipeline failure handling
 ✔ Pipeline re-execution
-✔ Failure alerting
 
 ## Analytics & Visualization
 
