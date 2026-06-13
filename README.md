@@ -90,7 +90,7 @@ Deliverables
 - Aggregated analytical datasets.
 - Dashboard
 
---------- Add Power BI dashboard screenshot here.
+<img src="images/Card_Campaign.png" width="800">
 
 ## Orchestration
 
@@ -125,7 +125,7 @@ Key capabilities implemented:
 - Embedded report access from Synapse Studio.
 - Business reporting based on Gold layer data products.
 
-------- Agrega imagen aqui:
+<img src="images/Card_Campaign_Synapse.png" width="800">
 
 ## Future Enhancements
 
